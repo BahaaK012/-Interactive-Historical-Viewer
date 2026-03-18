@@ -1,220 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Makes the page responsive on phones-->
     <title>Historical Timeline Explorer</title>
-    <style>
-        :root {
-            --accent: #d4a373;
-            --bg: #f8f9fa;
-        }
-
-        body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            background-color: var(--bg);
-            transition: background 0.5s ease;
-        }
-
-        /* 1. Header */
-        header {
-            text-align: center;
-            padding: 40px 20px;
-            background: #222;
-            color: white;
-        }
-
-        /* 2. Timeline Navigation */
-        .timeline-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 50px 0;
-            background: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-
-        .timeline {
-            display: flex;
-            align-items: center;
-            position: relative;
-            width: 80%;
-            max-width: 900px;
-        }
-
-        .timeline-line {
-            position: absolute;
-            height: 4px;
-            background: #ddd;
-            width: 100%;
-            z-index: 1;
-        }
-
-        .node {
-            width: 25px;
-            height: 25px;
-            background: #fff;
-            border: 4px solid #ddd;
-            border-radius: 50%;
-            z-index: 2;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .node.active {
-            border-color: var(--accent);
-            transform: scale(1.3);
-            background: var(--accent);
-        }
-
-        .node-label {
-            position: absolute;
-            top: 35px;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            font-weight: bold;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .node.active .node-label { color: #222; }
-
-        /* 3. Information Panel */
-        .content-panel {
-            max-width: 900px;
-            margin: 40px auto;
-            background: white;
-            padding: 50px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 40px;
-        }
-
-        .chart-bar {
-            height: 12px;
-            background: #eee;
-            border-radius: 10px;
-            margin: 10px 0 20px;
-            overflow: hidden;
-        }
-
-        .progress {
-            height: 100%;
-            background: var(--accent);
-            width: 0%;
-            transition: width 1s ease-in-out;
-        }
-
-        .figures-tags span {
-            display: inline-block;
-            background: #eee;
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin: 5px;
-            font-size: 0.85rem;
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- bootstrap added here -->
+    <link rel="stylesheet" href="style.css"> <!-- to add our own css -->
 </head>
 <body>
 
-    <header>
-        <h1>Historical Explorer</h1>
-        <p>Click the timeline nodes to travel through history</p>
+    <header class="bg-dark text-white text-center py-5"> <!-- header is defined here, bg-dark= dark background, py-5= padding top and bottom -->
+        <h1 class="display-4">Historical Explorer</h1> <!-- display 4 and lead are from bootstrap to set up the header and paragraph -->
+        <p class="lead">Click the timeline nodes to travel through history</p>
     </header>
 
-    <div class="timeline-container">
-        <div class="timeline">
-            <div class="timeline-line"></div>
-            <div class="node active" onclick="updatePage(0)" style="margin-right: auto;">
-                <div class="node-label">Arab Civilization</div>
-            </div>
-            <div class="node" onclick="updatePage(1)" style="margin: 0 auto;">
-                <div class="node-label">Ottoman Empire</div>
-            </div>
-            <div class="node" onclick="updatePage(2)" style="margin-left: auto;">
-                <div class="node-label">American Era</div>
+    <section class="timeline-container bg-white shadow-sm py-5"> <!-- this is for timeline -->
+        <div class="container d-flex justify-content-center"> <!-- Bootstrap container -->
+            <div class="timeline">
+                <div class="timeline-line"></div>
+                <div class="node active" onclick="updatePage(0)" style="margin-right: auto;"> <!-- node = style, active = currently selected, onclick: calls a js function, margin-right: pushes it to left -->
+                    <div class="node-label">Arab Civilization</div> <!-- node text -->
+                </div>
+                <div class="node" onclick="updatePage(1)" style="margin: 0 auto;"> <!-- middel node -->
+                    <div class="node-label">Ottoman Empire</div> <!-- this is for ottoman one -->
+                </div>
+                <div class="node" onclick="updatePage(2)" style="margin-left: auto;"> <!-- same goes here -->
+                    <div class="node-label">American Era</div>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <main class="content-panel" id="content">
-        <div class="text-side">
-            <h2 id="title">Arab Civilization</h2>
-            <p id="desc">A period of cultural, economic, and scientific flourishing in the history of Islam, traditionally dated from the 8th century to the 14th century.</p>
-            <h3>Key Figures</h3>
-            <div class="figures-tags" id="figures">
-                <span>Al-Khwarizmi</span><span>Ibn Sina</span><span>Ibn Rushd</span>
+    <main class="container my-5"> 
+        <div class="content-panel bg-white p-4 p-md-5 rounded-4 shadow border-0" id="content"> <!-- bg-white: white background, p-4: padding, rounded-4: rounded corners, id: this is used in js-->
+            <div class="row g-5"> <!-- g-5:spacing between columns  -->
+                <div class="col-md-7"> 
+                    <h2 id="title" class="fw-bold mb-3">Arab Civilization</h2> <!-- Title that JS updates -->
+                    <p id="desc" class="text-muted fs-5">A period of cultural, economic, and scientific flourishing in the history of Islam, traditionally dated from the 8th century to the 14th century.</p> <!-- Description (JS changes it) -->
+                    <h3 class="h5 mt-4">Key Figures</h3>  <!-- Section title -->
+                    <div class="figures-tags d-flex flex-wrap gap-2" id="figures"> <!-- Container for names -->
+                        <span class="badge rounded-pill text-dark px-3 py-2">Al-Khwarizmi</span> <!-- for each person in this (you can imagine now how we will add more) -->
+                        <span class="badge rounded-pill text-dark px-3 py-2">Ibn Sina</span>
+                        <span class="badge rounded-pill text-dark px-3 py-2">Ibn Rushd</span>
+                    </div>
+                </div>
+                
+                <div class="col-md-5"> <!-- Right column (the charts) -->
+                    <h3 class="h5 mb-4">Influence Metrics</h3> <!-- Section title -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Scientific Achievements</label>
+                        <div class="progress" style="height: 12px;"> <!-- Progress bar container -->
+                            <div class="progress-bar" id="stat-1" role="progressbar" style="width: 95%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Trade Influence</label>
+                        <div class="progress" style="height: 12px;">
+                            <div class="progress-bar" id="stat-2" role="progressbar" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Territorial Reach</label>
+                        <div class="progress" style="height: 12px;">
+                            <div class="progress-bar" id="stat-3" role="progressbar" style="width: 70%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <div class="chart-side">
-            <h3>Influence Metrics</h3>
-            <label>Scientific Achievements</label>
-            <div class="chart-bar"><div class="progress" id="stat-1" style="width: 95%"></div></div>
-            <label>Trade Influence</label>
-            <div class="chart-bar"><div class="progress" id="stat-2" style="width: 85%"></div></div>
-            <label>Territorial Reach</label>
-            <div class="chart-bar"><div class="progress" id="stat-3" style="width: 70%"></div></div>
         </div>
     </main>
 
-    <script>
-        const data = [
-            {
-                title: "Arab Civilization",
-                desc: "The Golden Age of science, where algebra was born and ancient Greek texts were preserved and expanded upon.",
-                figures: ["Al-Khwarizmi", "Ibn Sina", "Ibn Rushd"],
-                stats: ["95%", "85%", "70%"],
-                color: "#d4a373",
-                bg: "#fefae0"
-            },
-            {
-                title: "Ottoman Empire",
-                desc: "A transcontinental empire that served as the center of interactions between the Eastern and Western worlds for six centuries.",
-                figures: ["Mehmed II", "Suleiman I", "Mimar Sinan"],
-                stats: ["75%", "90%", "95%"],
-                color: "#606c38",
-                bg: "#f2f4ef"
-            },
-            {
-                title: "American Era",
-                desc: "The era defined by the Industrial Revolution, the advent of the digital age, and global technological leadership.",
-                figures: ["Washington", "Lincoln", "Edison"],
-                stats: ["90%", "95%", "80%"],
-                color: "#2b2d42",
-                bg: "#edf2f4"
-            }
-        ];
-
-        function updatePage(index) {
-            const item = data[index];
-            
-            // Update Text
-            document.getElementById('title').innerText = item.title;
-            document.getElementById('desc').innerText = item.desc;
-            document.body.style.backgroundColor = item.bg;
-            document.documentElement.style.setProperty('--accent', item.color);
-
-            // Update Figures
-            const figContainer = document.getElementById('figures');
-            figContainer.innerHTML = item.figures.map(f => `<span>${f}</span>`).join('');
-
-            // Update Stats (with animation reset)
-            document.getElementById('stat-1').style.width = item.stats[0];
-            document.getElementById('stat-2').style.width = item.stats[1];
-            document.getElementById('stat-3').style.width = item.stats[2];
-
-            // Update Active Node
-            const nodes = document.querySelectorAll('.node');
-            nodes.forEach((n, i) => {
-                n.classList.toggle('active', i === index);
-            });
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
