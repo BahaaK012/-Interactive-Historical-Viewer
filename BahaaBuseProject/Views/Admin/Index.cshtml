@@ -1,0 +1,532 @@
+
+@{
+    ViewData["Title"] = "Admin Panel";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+/* styling for the admin panel layout and cards */
+.admin-wrap   { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+.era-card     { border-radius:16px; border:none; box-shadow:0 4px 20px rgba(0,0,0,.08); margin-bottom:28px; overflow:hidden; }
+.era-card-hdr { padding:18px 24px; display:flex; align-items:center; gap:12px; }
+.era-card-body{ padding:24px; background:#fff; }
+.sub-table th { font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; color:#888; font-weight:600; }
+.sub-table td { vertical-align:middle; font-size:.88rem; }
+.sub-table td input, .sub-table td textarea { width:100%; }
+.pill-btn     { border-radius:30px; padding:5px 16px; font-size:.82rem; font-weight:600; }
+.add-btn      { border-radius:30px; font-size:.82rem; font-weight:600; }
+.era-title-in { font-size:1.1rem; font-weight:700; background:transparent; border:none; border-bottom:2px solid rgba(255,255,255,.4); color:inherit; width:100%; outline:none; }
+.era-title-in::placeholder { color:rgba(255,255,255,.6); }
+/* tab styling to switch between era data types */
+.section-tab  { border-bottom:2px solid #eee; margin-bottom:16px; gap:4px; }
+.section-tab button { background:none; border:none; padding:8px 16px; border-radius:8px 8px 0 0; font-weight:600; font-size:.85rem; color:#888; cursor:pointer; }
+.section-tab button.active { background:#f8f8f8; color:#222; border-bottom:2px solid var(--accent,#d4a373); }
+.tab-content  { display:none; }
+.tab-content.active { display:block; }
+.era-add-card { border:2px dashed #ccc; border-radius:16px; padding:28px; text-align:center; margin-bottom:28px; cursor:pointer; transition:.2s; }
+.era-add-card:hover { border-color:#aaa; background:#fafafa; }
+.toast-bar    { position:fixed; bottom:28px; right:28px; z-index:9999; min-width:220px; }
+</style>
+
+<div class="admin-wrap">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="fw-bold mb-0">⚙️ Admin Panel</h1>
+            <p class="text-muted mb-0">All changes save instantly to the database.</p>
+        </div>
+        <a href="/" class="btn btn-outline-secondary pill-btn">← Back to Site</a>
+    </div>
+
+    <div id="era-list">
+        <div class="text-center py-5 text-muted" id="loading-msg">
+            <div class="spinner-border spinner-border-sm me-2"></div> Loading…
+        </div>
+    </div>
+
+    <div class="era-add-card" onclick="openNewEraModal()">
+        <span style="font-size:2rem;">＋</span>
+        <p class="mb-0 mt-2 fw-bold text-muted">Add New Era</p>
+    </div>
+</div>
+
+<!-- new era modal for creating data -->
+<div class="modal fade" id="newEraModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">✨ Add New Era</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-8"><label class="form-label fw-bold">Era Title</label><input id="ne-title" class="form-control" placeholder="e.g. The Roman Empire"></div>
+                    <div class="col-md-4"><label class="form-label fw-bold">Node Label</label><input id="ne-nodelabel" class="form-control" placeholder="e.g. Romans"></div>
+                    <div class="col-12"><label class="form-label fw-bold">Short Description</label><textarea id="ne-desc" class="form-control" rows="2"></textarea></div>
+                    <div class="col-md-4"><label class="form-label fw-bold">Accent Color</label><div class="d-flex gap-2"><input type="color" id="ne-color" value="#d4a373"><input type="text" id="ne-color-hex" class="form-control" value="#d4a373" style="width:100px;"></div></div>
+                    <div class="col-md-4"><label class="form-label fw-bold">BG Color</label><div class="d-flex gap-2"><input type="color" id="ne-bg" value="#fefae0"><input type="text" id="ne-bg-hex" class="form-control" value="#fefae0" style="width:100px;"></div></div>
+                    <div class="col-md-4"><label class="form-label fw-bold">Section Icon</label><input id="ne-icon" class="form-control" placeholder="✨" style="font-size:1.3rem;"></div>
+                    <div class="col-4"><label class="form-label fw-bold">Stat 1 (Science %)</label><input id="ne-s1" class="form-control" value="75%"></div>
+                    <div class="col-4"><label class="form-label fw-bold">Stat 2 (Trade %)</label><input id="ne-s2" class="form-control" value="75%"></div>
+                    <div class="col-4"><label class="form-label fw-bold">Stat 3 (Territory %)</label><input id="ne-s3" class="form-control" value="75%"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-dark pill-btn px-4" onclick="saveNewEra()">Create Era</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- toast notification for saving feedback -->
+<div class="toast-bar">
+    <div id="toast" class="toast align-items-center text-white border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body fw-bold" id="toast-msg">Saved!</div>
+            <button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let eras = [];
+const debounceTimers = {};
+
+window.onload = async () => {
+    await loadEras();
+    syncColorPair('ne-color', 'ne-color-hex');
+    syncColorPair('ne-bg', 'ne-bg-hex');
+};
+
+/* fetch eras list from bahaa backend api */
+async function loadEras() {
+    const res = await fetch('/api/AdminApi/eras');
+    eras = await res.json();
+    document.getElementById('loading-msg')?.remove();
+    renderAll();
+}
+
+/* loop to build all era cards */
+function renderAll() {
+    const list = document.getElementById('era-list');
+    list.innerHTML = '';
+    eras.forEach(e => list.appendChild(buildCard(e)));
+}
+
+/* build individual era card with all fields and sub tables */
+function buildCard(era) {
+    const card = document.createElement('div');
+    card.className = 'era-card'; card.id = `era-card-${era.id}`;
+    card.innerHTML = `
+    <div class="era-card-hdr" style="background:${era.color};color:#fff;">
+        <input class="era-title-in" value="${esc(era.title)}" placeholder="Era Title" onchange="fieldChange(${era.id},'title',this.value)">
+        <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-sm btn-light pill-btn" data-bs-toggle="collapse" data-bs-target="#body-${era.id}">▾ Details</button>
+            <button class="btn btn-sm btn-danger pill-btn" onclick="deleteEra(${era.id})">✕</button>
+        </div>
+    </div>
+    <div class="collapse show" id="body-${era.id}">
+    <div class="era-card-body">
+        <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label fw-bold" style="font-size:.75rem;">Node Label</label>
+                <input class="form-control form-control-sm" value="${esc(era.nodeLabel)}" onchange="fieldChange(${era.id},'nodeLabel',this.value)"></div>
+            <div class="col-md-9"><label class="form-label fw-bold" style="font-size:.75rem;">Short Description</label>
+                <input class="form-control form-control-sm" value="${esc(era.description)}" onchange="fieldChange(${era.id},'description',this.value)"></div>
+        </div>
+        <div class="row g-3 mb-3 align-items-end">
+            <div class="col-auto"><label class="form-label fw-bold" style="font-size:.75rem;">Accent</label>
+                <div class="d-flex gap-1"><input type="color" value="${era.color}" style="width:34px;height:32px;border-radius:6px;border:1px solid #ddd;padding:2px;" oninput="colourChange(${era.id},'color',this.value,this.nextElementSibling)">
+                <input type="text" class="form-control form-control-sm" value="${era.color}" style="width:88px;" onchange="colourChange(${era.id},'color',this.value,this.previousElementSibling)"></div></div>
+            <div class="col-auto"><label class="form-label fw-bold" style="font-size:.75rem;">Background</label>
+                <div class="d-flex gap-1"><input type="color" value="${era.bgColor}" style="width:34px;height:32px;border-radius:6px;border:1px solid #ddd;padding:2px;" oninput="colourChange(${era.id},'bgColor',this.value,this.nextElementSibling)">
+                <input type="text" class="form-control form-control-sm" value="${era.bgColor}" style="width:88px;" onchange="colourChange(${era.id},'bgColor',this.value,this.previousElementSibling)"></div></div>
+            <div class="col-auto"><label class="form-label fw-bold" style="font-size:.75rem;">Icon</label>
+                <input class="form-control form-control-sm" value="${esc(era.sectionIcon)}" style="width:60px;font-size:1.2rem;text-align:center;" onchange="fieldChange(${era.id},'sectionIcon',this.value)"></div>
+            <div class="col"><label class="form-label fw-bold" style="font-size:.75rem;">Science %</label>
+                <input class="form-control form-control-sm" value="${esc(era.stat1)}" onchange="fieldChange(${era.id},'stat1',this.value)"></div>
+            <div class="col"><label class="form-label fw-bold" style="font-size:.75rem;">Trade %</label>
+                <input class="form-control form-control-sm" value="${esc(era.stat2)}" onchange="fieldChange(${era.id},'stat2',this.value)"></div>
+            <div class="col"><label class="form-label fw-bold" style="font-size:.75rem;">Territory %</label>
+                <input class="form-control form-control-sm" value="${esc(era.stat3)}" onchange="fieldChange(${era.id},'stat3',this.value)"></div>
+        </div>
+
+        /* tabs to switch between edit tables */
+        <div class="section-tab d-flex" id="tabs-${era.id}">
+            ${['Figures','Cities','Quotes','Videos','Sources','Quiz'].map((t,i) =>
+                `<button onclick="switchTab(${era.id},'${t.toLowerCase()}')" class="${i===0?'active':''}">${t}</button>`
+            ).join('')}
+        </div>
+
+        ${buildFiguresTab(era)}
+        ${buildCitiesTab(era)}
+        ${buildQuotesTab(era)}
+        ${buildVideosTab(era)}
+        ${buildSourcesTab(era)}
+        ${buildQuizTab(era)}
+    </div>
+    </div>`;
+    return card;
+}
+
+/* helper to switch tab display */
+function switchTab(eraId, tab) {
+    document.querySelectorAll(`#tabs-${eraId} button`).forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll(`[id^="tab-${eraId}-"]`).forEach(el => el.classList.remove('active'));
+    document.querySelector(`#tabs-${eraId} button[onclick*="'${tab}'"]`).classList.add('active');
+    document.getElementById(`tab-${eraId}-${tab}`).classList.add('active');
+}
+
+/* figures tab builder */
+function buildFiguresTab(era) {
+    return `<div class="tab-content active" id="tab-${era.id}-figures">
+        <div class="d-flex justify-content-between mb-2">
+            <h6 class="fw-bold mb-0">👤 Key Figures</h6>
+            <button class="btn btn-sm btn-outline-dark add-btn" onclick="promptAddFigure(${era.id})">+ Add</button>
+        </div>
+        <table class="table table-sm sub-table"><thead><tr><th>Name</th><th>Bio</th><th style="width:50px;"></th></tr></thead>
+        <tbody id="figures-${era.id}">${(era.figures||[]).map(f => figureRow(f)).join('')}</tbody></table>
+    </div>`;
+}
+function figureRow(f) { return `<tr id="fig-row-${f.id}">
+    <td><input class="form-control form-control-sm" value="${esc(f.name)}" onchange="updateFigure(${f.id},'name',this.value)"></td>
+    <td><textarea class="form-control form-control-sm" rows="2" onchange="updateFigure(${f.id},'bio',this.value)">${esc(f.bio)}</textarea></td>
+    <td><button class="btn btn-sm btn-outline-danger pill-btn" onclick="deleteFigure(${f.id})">✕</button></td></tr>`; }
+
+/* cities tab buiilder */
+function buildCitiesTab(era) {
+    return `<div class="tab-content" id="tab-${era.id}-cities">
+        <div class="d-flex justify-content-between mb-2">
+            <h6 class="fw-bold mb-0">🏙️ Key Cities</h6>
+            <button class="btn btn-sm btn-outline-dark add-btn" onclick="promptAddCity(${era.id})">+ Add</button>
+        </div>
+        <table class="table table-sm sub-table"><thead><tr><th>Name</th><th>Info</th><th style="width:50px;"></th></tr></thead>
+        <tbody id="cities-${era.id}">${(era.cities||[]).map(c => cityRow(c)).join('')}</tbody></table>
+    </div>`;
+}
+function cityRow(c) { return `<tr id="city-row-${c.id}">
+    <td><input class="form-control form-control-sm" value="${esc(c.name)}" onchange="updateCity(${c.id},'name',this.value)"></td>
+    <td><textarea class="form-control form-control-sm" rows="2" onchange="updateCity(${c.id},'info',this.value)">${esc(c.info)}</textarea></td>
+    <td><button class="btn btn-sm btn-outline-danger pill-btn" onclick="deleteCity(${c.id})">✕</button></td></tr>`; }
+
+/* quotes tab builder */
+function buildQuotesTab(era) {
+    return `<div class="tab-content" id="tab-${era.id}-quotes">
+        <div class="d-flex justify-content-between mb-2">
+            <h6 class="fw-bold mb-0">💬 Quotes</h6>
+            <button class="btn btn-sm btn-outline-dark add-btn" onclick="promptAddQuote(${era.id})">+ Add</button>
+        </div>
+        <table class="table table-sm sub-table"><thead><tr><th>Text</th><th>Author</th><th style="width:50px;"></th></tr></thead>
+        <tbody id="quotes-${era.id}">${(era.quotes||[]).map(q => quoteRow(q)).join('')}</tbody></table>
+    </div>`;
+}
+function quoteRow(q) { return `<tr id="quote-row-${q.id}">
+    <td><textarea class="form-control form-control-sm" rows="2" onchange="updateQuote(${q.id},'text',this.value)">${esc(q.text)}</textarea></td>
+    <td><input class="form-control form-control-sm" value="${esc(q.author)}" onchange="updateQuote(${q.id},'author',this.value)"></td>
+    <td><button class="btn btn-sm btn-outline-danger pill-btn" onclick="deleteQuote(${q.id})">✕</button></td></tr>`; }
+
+/* videos tab builder */
+function buildVideosTab(era) {
+    return `<div class="tab-content" id="tab-${era.id}-videos">
+        <div class="d-flex justify-content-between mb-2">
+            <h6 class="fw-bold mb-0">▶️ Videos</h6>
+            <button class="btn btn-sm btn-outline-dark add-btn" onclick="promptAddVideo(${era.id})">+ Add</button>
+        </div>
+        <table class="table table-sm sub-table"><thead><tr><th>Title</th><th>YouTube URL</th><th style="width:50px;"></th></tr></thead>
+        <tbody id="videos-${era.id}">${(era.videos||[]).map(v => videoRow(v)).join('')}</tbody></table>
+    </div>`;
+}
+function videoRow(v) { return `<tr id="video-row-${v.id}">
+    <td><input class="form-control form-control-sm" value="${esc(v.title)}" onchange="updateVideo(${v.id},'title',this.value)"></td>
+    <td><input class="form-control form-control-sm" value="${esc(v.url)}" onchange="updateVideo(${v.id},'url',this.value)"></td>
+    <td><button class="btn btn-sm btn-outline-danger pill-btn" onclick="deleteVideo(${v.id})">✕</button></td></tr>`; }
+
+/* sources tab builder */
+function buildSourcesTab(era) {
+    return `<div class="tab-content" id="tab-${era.id}-sources">
+        <div class="d-flex justify-content-between mb-2">
+            <h6 class="fw-bold mb-0">📚 Sources</h6>
+            <button class="btn btn-sm btn-outline-dark add-btn" onclick="promptAddSource(${era.id})">+ Add</button>
+        </div>
+        <table class="table table-sm sub-table"><thead><tr><th>Label</th><th>URL</th><th style="width:50px;"></th></tr></thead>
+        <tbody id="sources-${era.id}">${(era.sources||[]).map(s => sourceRow(s)).join('')}</tbody></table>
+    </div>`;
+}
+function sourceRow(s) { return `<tr id="source-row-${s.id}">
+    <td><input class="form-control form-control-sm" value="${esc(s.label)}" onchange="updateSource(${s.id},'label',this.value)"></td>
+    <td><input class="form-control form-control-sm" value="${esc(s.url)}" onchange="updateSource(${s.id},'url',this.value)"></td>
+    <td><button class="btn btn-sm btn-outline-danger pill-btn" onclick="deleteSource(${s.id})">✕</button></td></tr>`; }
+
+/* quiz tab builder */
+function buildQuizTab(era) {
+    return `<div class="tab-content" id="tab-${era.id}-quiz">
+        <div class="d-flex justify-content-between mb-2">
+            <h6 class="fw-bold mb-0">🧠 Quiz Questions</h6>
+            <button class="btn btn-sm btn-outline-dark add-btn" onclick="promptAddQuiz(${era.id})">+ Add</button>
+        </div>
+        <div id="quiz-list-${era.id}">
+        ${(era.quizQuestions||[]).map(q => `
+            <div class="border rounded p-3 mb-2" id="quiz-row-${q.id}">
+                <div class="d-flex justify-content-between mb-2">
+                    <strong style="font-size:.85rem;">Q: ${esc(q.question)}</strong>
+                    <button class="btn btn-sm btn-outline-danger pill-btn" onclick="deleteQuiz(${q.id})">✕</button>
+                </div>
+                <small class="text-muted">Options: ${(q.options||[]).map((o,i)=>`${i===q.correctIndex?'✅':'○'} ${esc(o.text)}`).join(' | ')}</small>
+            </div>
+        `).join('')}
+        </div>
+    </div>`;
+}
+
+/* crud for era main fields */
+function fieldChange(eraId, field, value) {
+    const key = `${eraId}-${field}`;
+    clearTimeout(debounceTimers[key]);
+    debounceTimers[key] = setTimeout(() => saveEraField(eraId, field, value), 600);
+}
+function colourChange(eraId, field, value, mirrorEl) { mirrorEl.value = value; fieldChange(eraId, field, value); }
+
+async function saveEraField(eraId, field, value) {
+    const era = eras.find(e => e.id === eraId); if (!era) return;
+    era[field] = value;
+    const res = await fetch(`/api/AdminApi/eras/${eraId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(era) });
+    toast(res.ok ? '✅ Saved!' : '❌ Save failed', res.ok ? '#198754' : '#dc3545');
+}
+
+async function deleteEra(id) {
+    if (!confirm('Delete this entire Era including all nested data?')) return;
+    const res = await fetch(`/api/AdminApi/eras/${id}`, { method:'DELETE' });
+    if (res.ok) { eras = eras.filter(e => e.id !== id); document.getElementById(`era-card-${id}`)?.remove(); toast('🗑️ Era deleted','#6c757d'); }
+}
+
+function openNewEraModal() { new bootstrap.Modal(document.getElementById('newEraModal')).show(); }
+
+async function saveNewEra() {
+    const payload = {
+        title: document.getElementById('ne-title').value.trim(),
+        nodeLabel: document.getElementById('ne-nodelabel').value.trim(),
+        description: document.getElementById('ne-desc').value.trim(),
+        color: document.getElementById('ne-color-hex').value.trim(),
+        bgColor: document.getElementById('ne-bg-hex').value.trim(),
+        sectionIcon: document.getElementById('ne-icon').value.trim(),
+        stat1: document.getElementById('ne-s1').value.trim() || '75%',
+        stat2: document.getElementById('ne-s2').value.trim() || '75%',
+        stat3: document.getElementById('ne-s3').value.trim() || '75%',
+    };
+    if (!payload.title) { alert('Era Title is required.'); return; }
+    const res  = await fetch('/api/AdminApi/eras', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const newEra = await res.json();
+    newEra.figures=[]; newEra.cities=[]; newEra.quotes=[]; newEra.videos=[]; newEra.sources=[]; newEra.quizQuestions=[];
+    eras.push(newEra);
+    document.getElementById('era-list').appendChild(buildCard(newEra));
+    bootstrap.Modal.getInstance(document.getElementById('newEraModal')).hide();
+    toast('✨ Era created!','#0d6efd');
+}
+
+/* debounced updateer for sub tables */
+const subState = {};
+function subChange(key, endpoint, id, field, value) {
+    if (!subState[key]) subState[key] = {};
+    subState[key][field] = value;
+    clearTimeout(subState[key]._t);
+    subState[key]._t = setTimeout(async () => {
+        const res = await fetch(`/api/AdminApi/${endpoint}/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(subState[key]) });
+        toast(res.ok ? '✅ Saved!' : '❌ Save failed', res.ok ? '#198754' : '#dc3545');
+    }, 700);
+}
+
+/* update logic for figures */
+function updateFigure(id, field, value) {
+    const era = eras.find(e => e.figures?.some(f => f.id===id));
+    const fig = era?.figures.find(f => f.id===id);
+    if (!fig) return;
+    fig[field] = value;
+    subChange(`fig-${id}`, 'figures', id, field, value);
+    if (!subState[`fig-${id}`]) subState[`fig-${id}`] = {};
+    Object.assign(subState[`fig-${id}`], { name:fig.name, bio:fig.bio });
+}
+async function promptAddFigure(eraId) {
+    const name = prompt('Figure name:'); if(!name) return;
+    const bio  = prompt('Short bio:') || '';
+    const res  = await fetch('/api/AdminApi/figures', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({eraId,name,bio}) });
+    const f = await res.json();
+    eras.find(e=>e.id===eraId)?.figures.push(f);
+    document.getElementById(`figures-${eraId}`).insertAdjacentHTML('beforeend', figureRow(f));
+    toast('👤 Figure added','#198754');
+}
+async function deleteFigure(id) {
+    if(!confirm('Delete this figure?')) return;
+    await fetch(`/api/AdminApi/figures/${id}`,{method:'DELETE'});
+    document.getElementById(`fig-row-${id}`)?.remove();
+    eras.forEach(e=>{ e.figures=e.figures?.filter(f=>f.id!==id)||[]; });
+    toast('🗑️ Removed','#6c757d');
+}
+
+/* update logic for cities */
+function updateCity(id, field, value) {
+    const era = eras.find(e=>e.cities?.some(c=>c.id===id));
+    const city = era?.cities.find(c=>c.id===id);
+    if(!city) return;
+    city[field]=value;
+    if(!subState[`city-${id}`]) subState[`city-${id}`]={name:city.name,info:city.info};
+    subState[`city-${id}`][field]=value;
+    clearTimeout(subState[`city-${id}`]._t);
+    subState[`city-${id}`]._t=setTimeout(async()=>{
+        const res=await fetch(`/api/AdminApi/cities/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(subState[`city-${id}`])});
+        toast(res.ok?'✅ Saved!':'❌ Save failed',res.ok?'#198754':'#dc3545');
+    },700);
+}
+async function promptAddCity(eraId) {
+    const name=prompt('City name:');if(!name)return;
+    const info=prompt('Info:')|| '';
+    const res=await fetch('/api/AdminApi/cities',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eraId,name,info})});
+    const c=await res.json();
+    eras.find(e=>e.id===eraId)?.cities.push(c);
+    document.getElementById(`cities-${eraId}`).insertAdjacentHTML('beforeend',cityRow(c));
+    toast('🏙️ City added','#198754');
+}
+async function deleteCity(id){
+    if(!confirm('Delete this city?'))return;
+    await fetch(`/api/AdminApi/cities/${id}`,{method:'DELETE'});
+    document.getElementById(`city-row-${id}`)?.remove();
+    eras.forEach(e=>{e.cities=e.cities?.filter(c=>c.id!==id)||[];});
+    toast('🗑️ Removed','#6c757d');
+}
+
+/* update logic for quotes */
+function updateQuote(id,field,value){
+    const era=eras.find(e=>e.quotes?.some(q=>q.id===id));
+    const q=era?.quotes.find(q=>q.id===id);if(!q)return;
+    q[field]=value;
+    if(!subState[`quote-${id}`])subState[`quote-${id}`]={text:q.text,author:q.author};
+    subState[`quote-${id}`][field]=value;
+    clearTimeout(subState[`quote-${id}`]._t);
+    subState[`quote-${id}`]._t=setTimeout(async()=>{
+        const res=await fetch(`/api/AdminApi/quotes/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(subState[`quote-${id}`])});
+        toast(res.ok?'✅ Saved!':'❌ Failed',res.ok?'#198754':'#dc3545');
+    },700);
+}
+async function promptAddQuote(eraId){
+    const text=prompt('Quote text:');if(!text)return;
+    const author=prompt('Author:')|| '';
+    const res=await fetch('/api/AdminApi/quotes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eraId,text,author})});
+    const q=await res.json();
+    eras.find(e=>e.id===eraId)?.quotes.push(q);
+    document.getElementById(`quotes-${eraId}`).insertAdjacentHTML('beforeend',quoteRow(q));
+    toast('💬 Quote added','#198754');
+}
+async function deleteQuote(id){
+    if(!confirm('Delete this quote?'))return;
+    await fetch(`/api/AdminApi/quotes/${id}`,{method:'DELETE'});
+    document.getElementById(`quote-row-${id}`)?.remove();
+    toast('🗑️ Removed','#6c757d');
+}
+
+/* update logic for videos */
+function updateVideo(id,field,value){
+    const era=eras.find(e=>e.videos?.some(v=>v.id===id));
+    const v=era?.videos.find(v=>v.id===id);if(!v)return;
+    v[field]=value;
+    if(!subState[`video-${id}`])subState[`video-${id}`]={title:v.title,channel:'YouTube Research',url:v.url};
+    subState[`video-${id}`][field]=value;
+    clearTimeout(subState[`video-${id}`]._t);
+    subState[`video-${id}`]._t=setTimeout(async()=>{
+        const res=await fetch(`/api/AdminApi/videos/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(subState[`video-${id}`])});
+        toast(res.ok?'✅ Saved!':'❌ Failed',res.ok?'#198754':'#dc3545');
+    },700);
+}
+async function promptAddVideo(eraId){
+    const title=prompt('Video title:');if(!title)return;
+    const url=prompt('YouTube search URL:')|| '';
+    const res=await fetch('/api/AdminApi/videos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eraId,title,channel:'YouTube Research',url})});
+    const v=await res.json();
+    eras.find(e=>e.id===eraId)?.videos.push(v);
+    document.getElementById(`videos-${eraId}`).insertAdjacentHTML('beforeend',videoRow(v));
+    toast('▶️ Video added','#198754');
+}
+async function deleteVideo(id){
+    if(!confirm('Delete this video?'))return;
+    await fetch(`/api/AdminApi/videos/${id}`,{method:'DELETE'});
+    document.getElementById(`video-row-${id}`)?.remove();
+    toast('🗑️ Removed','#6c757d');
+}
+
+/* update logic for sources */
+function updateSource(id,field,value){
+    const era=eras.find(e=>e.sources?.some(s=>s.id===id));
+    const s=era?.sources.find(s=>s.id===id);if(!s)return;
+    s[field]=value;
+    if(!subState[`source-${id}`])subState[`source-${id}`]={label:s.label,url:s.url};
+    subState[`source-${id}`][field]=value;
+    clearTimeout(subState[`source-${id}`]._t);
+    subState[`source-${id}`]._t=setTimeout(async()=>{
+        const res=await fetch(`/api/AdminApi/sources/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(subState[`source-${id}`])});
+        toast(res.ok?'✅ Saved!':'❌ Failed',res.ok?'#198754':'#dc3545');
+    },700);
+}
+async function promptAddSource(eraId){
+    const label=prompt('Source label (e.g. Wikipedia: Ottoman Empire):');if(!label)return;
+    const url=prompt('Full URL:')|| '#';
+    const res=await fetch('/api/AdminApi/sources',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eraId,label,url})});
+    const s=await res.json();
+    eras.find(e=>e.id===eraId)?.sources.push(s);
+    document.getElementById(`sources-${eraId}`).insertAdjacentHTML('beforeend',sourceRow(s));
+    toast('📚 Source added','#198754');
+}
+async function deleteSource(id){
+    if(!confirm('Delete this source?'))return;
+    await fetch(`/api/AdminApi/sources/${id}`,{method:'DELETE'});
+    document.getElementById(`source-row-${id}`)?.remove();
+    toast('🗑️ Removed','#6c757d');
+}
+
+/* quiz crud */
+async function promptAddQuiz(eraId){
+    const question=prompt('Question text:');if(!question)return;
+    const opts=[];
+    for(let i=1;i<=4;i++){
+        const o=prompt(`Option ${i}:`);if(!o)return;
+        opts.push({text:o});
+    }
+    const correct=parseInt(prompt('Which option is correct? (1, 2, 3, or 4):'))-1;
+    if(isNaN(correct)||correct<0||correct>3){alert('Invalid option number.');return;}
+    const payload={eraId,question,correctIndex:correct,options:opts};
+    const res=await fetch('/api/AdminApi/quiz',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const q=await res.json();
+    eras.find(e=>e.id===eraId)?.quizQuestions.push(q);
+    const listEl=document.getElementById(`quiz-list-${eraId}`);
+    listEl.insertAdjacentHTML('beforeend',`
+        <div class="border rounded p-3 mb-2" id="quiz-row-${q.id}">
+            <div class="d-flex justify-content-between mb-2">
+                <strong style="font-size:.85rem;">Q: ${esc(q.question)}</strong>
+                <button class="btn btn-sm btn-outline-danger pill-btn" onclick="deleteQuiz(${q.id})">✕</button>
+            </div>
+            <small class="text-muted">Options: ${opts.map((o,i)=>`${i===correct?'✅':'○'} ${esc(o.text)}`).join(' | ')}</small>
+        </div>`);
+    toast('🧠 Question added','#198754');
+}
+async function deleteQuiz(id){
+    if(!confirm('Delete this quiz question?'))return;
+    await fetch(`/api/AdminApi/quiz/${id}`,{method:'DELETE'});
+    document.getElementById(`quiz-row-${id}`)?.remove();
+    toast('🗑️ Removed','#6c757d');
+}
+
+/* helper to escape html to stop xss */
+function esc(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* function to show toast message */
+function toast(msg, bg='#198754'){
+    const el=document.getElementById('toast');
+    document.getElementById('toast-msg').textContent=msg;
+    el.style.background=bg;
+    new bootstrap.Toast(el,{delay:2200}).show();
+}
+
+/* link color picker to text box */
+function syncColorPair(pickId, hexId){
+    document.getElementById(pickId).addEventListener('input', e => document.getElementById(hexId).value=e.target.value);
+    document.getElementById(hexId).addEventListener('change', e => document.getElementById(pickId).value=e.target.value);
+}
+</script>
+}
+

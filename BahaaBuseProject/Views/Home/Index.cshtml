@@ -1,0 +1,103 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<!-- hero section — the top part of the page -->
+<header class="custom-header text-center text-white">
+    <h1>Historical Explorer</h1>
+    <p class="mb-0">Click the timeline nodes to travel through history</p>
+</header>
+
+<!-- timeline section — container that will be filled by buildTimeline() in script.js -->
+<div class="timeline-container bg-white d-flex justify-content-center align-items-center">
+    <div class="timeline d-flex align-items-center position-relative justify-content-between w-75" id="timeline-nodes">
+        <div class="timeline-line position-absolute w-100"></div>
+    </div>
+</div>
+
+<!-- main content panel — holds everything for the current era -->
+<main class="content-panel bg-white mx-auto p-5 d-grid flex-grow-1" id="content">
+
+    <!-- left: title, desc, and figures list -->
+    <div class="text-side">
+        <h2 id="title"></h2>
+        <p id="desc"></p>
+        <h3>Key Figures</h3>
+        <div class="figures-tags" id="figures"></div> <!-- container for clickable figure tags -->
+    </div>
+
+    <!-- right: visual progress bars for era stats -->
+    <div class="chart-side">
+        <h3>Influence Metrics</h3>
+        <label>Scientific Achievements / Innovation</label>
+        <div class="chart-bar rounded-pill overflow-hidden mt-2 mb-4"><div class="custom-progress h-100" id="stat-1"></div></div>
+        <label>Trade / Economic Influence</label>
+        <div class="chart-bar rounded-pill overflow-hidden mt-2 mb-4"><div class="custom-progress h-100" id="stat-2"></div></div>
+        <label>Territorial Reach / Global Impact</label>
+        <div class="chart-bar rounded-pill overflow-hidden mt-2 mb-4"><div class="custom-progress h-100" id="stat-3"></div></div>
+    </div>
+
+    <!-- cities section — map interaction for cities -->
+    <div class="map-side mt-5 pt-4 border-top">
+        <h3>🗺️ Interactive Map: Key Cities</h3>
+        <p class="text-muted mb-3">Select a major hub of the era to explore its significance.</p>
+        <div class="d-flex flex-wrap gap-2 mb-4" id="map-cities"></div>
+        <div class="card bg-light border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex gap-4 align-items-start flex-wrap">
+                    <div style="flex:1; min-width:200px;">
+                        <h5 id="city-title" class="mb-2 fw-bold">Select a city</h5>
+                        <p id="city-info" class="mb-0 text-secondary" style="min-height:50px;">Click on a city to see its historical significance during this era.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- quotes section — auto filled by renderQuotes() -->
+    <div class="full-width mt-5 pt-4 border-top">
+        <h3>💬 Notable Quotes</h3>
+        <div id="quotes-container" class="d-flex flex-wrap gap-3 mt-3"></div>
+    </div>
+
+    <!-- videos section — auto filled by renderVideos() -->
+    <div class="full-width mt-5 pt-4 border-top">
+        <h3>▶️ Watch: YouTube Research</h3>
+        <div id="videos-container" class="d-flex flex-column gap-3 mt-3"></div>
+    </div>
+
+    <!-- sources section — auto filled by renderSources() -->
+    <div class="full-width mt-5 pt-4 border-top">
+        <h3>📚 Sources &amp; Further Reading</h3>
+        <div id="sources-container" class="d-flex flex-wrap gap-2 mt-3"></div>
+    </div>
+
+    <!-- quiz section — auto filled by renderQuiz() -->
+    <div class="full-width mt-5 pt-4 border-top">
+        <h3>🧠 Test Your Knowledge</h3>
+        <div id="quiz-wrapper" class="mt-3"></div>
+    </div>
+
+</main>
+
+<!-- bio modal — popup to show figure details -->
+<div class="modal fade" id="bioModal" tabindex="-1" aria-labelledby="bioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background-color:var(--accent);">
+                <h5 class="modal-title" id="bioModalLabel"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p id="bioModalBody" class="mb-0" style="line-height:1.8;"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- era sections — hidden sections that get filled by buildEraSections() -->
+<div id="era-sections"></div>
+
+@section Scripts {
+    <script src="~/js/script.js"></script> <!-- linking bahaa-buse engine -->
+}

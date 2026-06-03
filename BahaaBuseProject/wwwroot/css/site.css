@@ -1,0 +1,326 @@
+
+
+/*
+   BahaaBuseProject — Historical Explorer Theme
+   site.css
+    */
+
+:root {
+    --accent: #d4a373; /* the main color theme for the site */
+    --bg: #f8f9fa; /* light grey for the background to make content pop */
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg);
+    transition: background 0.5s ease; /* makes the background color fade smoothly when changing eras */
+}
+
+/* navbar */
+.letter-spaced {
+    letter-spacing: 0.08em; /* adds space between letters to make text look more elegant */
+}
+
+/* hero header */
+.custom-header {
+    background: #222;
+    padding: 40px 20px;
+}
+
+/* timeline */
+.timeline-container {
+    padding: 50px 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* soft shadow to lift the timeline off the page */
+}
+
+.timeline {
+    max-width: 900px;
+}
+
+.timeline-line {
+    height: 4px;
+    background: #ddd;
+    z-index: 1; /* puts the line behind the nodes */
+}
+
+.node {
+    width: 25px;
+    height: 25px;
+    border: 4px solid #ddd;
+    z-index: 2; /* bringss nodes in front of the line */
+    cursor: pointer;
+    transition: all 0.3s ease; /* makes the hover effect smooth */
+}
+
+.node.active {
+    border-color: var(--accent); /* border changes to accent color to show selected era */
+    transform: scale(1.3); /* makes the active node grow to stand out */
+    background: var(--accent) !important;
+}
+
+.node-label {
+    top: 35px;
+    transform: translateX(-50%);
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.node.active .node-label {
+    color: #222 !important;
+}
+
+/* content panel */
+.content-panel {
+    max-width: 900px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* deep shadow to create a card effect */
+    grid-template-columns: 1.5fr 1fr;
+    gap: 40px;
+}
+
+/* map section spans both grid columns */
+.map-side {
+    grid-column: 1 / -1;
+}
+
+/* progress bars */
+.chart-bar {
+    height: 12px;
+    background: #eee;
+}
+
+.custom-progress {
+    background: var(--accent); /* progress bar fills with the active era color */
+    transition: width 1s ease-in-out; /* makes the bar grow slowly when loaded and i really not sure if this works */
+    width: 0%;
+}
+
+/* figure tags */
+.figures-tags span {
+    display: inline-block;
+    background: #eee;
+    padding: 5px 15px;
+    border-radius: 20px;
+    margin: 5px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.figures-tags span:hover {
+    background: var(--accent); /* highlights tag when user points at it */
+    color: white;
+    transform: translateY(-2px); /* lifts button slightly to show it is interactive */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* city buttons */
+.city-btn {
+    background-color: #fff;
+    border: 2px solid var(--accent); /* uses accent to show its part of the era theme */
+    color: #333;
+    padding: 8px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.city-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* static era sections */
+.era-section {
+    border-top: 3px solid var(--accent); /* line at the top to divide eras */
+}
+
+.era-heading {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #222;
+}
+
+.era-facts {
+    margin-top: 1rem;
+    padding-left: 1.2rem;
+    line-height: 2;
+    color: #444;
+}
+
+.era-facts li {
+    margin-bottom: 0.3rem;
+}
+
+/* footer */
+footer {
+    background: #f1f1f1;
+    border-top: 1px solid #ddd;
+}
+
+/* full-width sections inside the grid */
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* quote cards */
+.quote-card {
+    background: #f8f5f0;
+    border-left: 4px solid var(--accent); /* colored line to identify as a quote */
+    border-radius: 10px;
+    padding: 18px 22px;
+    flex: 1;
+    min-width: 260px;
+}
+
+.quote-text {
+    font-size: 1rem;
+    font-style: italic; /* makes quote stand out from regular text */
+    color: #333;
+    line-height: 1.7;
+    margin-bottom: 8px;
+}
+
+.quote-author {
+    font-size: 0.82rem;
+    color: #888;
+    font-weight: 600;
+}
+
+/* video cards */
+.video-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e5e5e5;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+
+.video-card:hover {
+    background: var(--accent); /* changes color to accent on hover to show link */
+    color: #fff;
+    border-color: var(--accent);
+    transform: translateX(4px); /* moves card slightly to feel clickable */
+}
+
+.video-thumb {
+    width: 44px;
+    height: 44px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1rem;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.video-card:hover .video-thumb {
+    background: rgba(255,255,255,0.3);
+}
+
+.video-title {
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.video-channel {
+    font-size: 0.78rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.video-card:hover .video-channel {
+    color: rgba(255,255,255,0.8);
+}
+
+/* source badges */
+.source-badge {
+    display: inline-block;
+    background: #eee;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.83rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+    border: 1px solid #ddd;
+    transition: all 0.2s ease;
+}
+
+.source-badge:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* quiz */
+.quiz-question {
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    border: 1px solid #eee;
+}
+
+.quiz-question p {
+    font-weight: 600;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.quiz-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: #fff;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quiz-option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: #fffaf5; /* light hover color to not be distracting */
+}
+
+.quiz-option.correct {
+    background: #d1f7e0;
+    border-color: #2ecc71; /* green for corect answer */
+    color: #1a7a42;
+    font-weight: 700;
+}
+
+.quiz-option.wrong {
+    background: #fde8e8;
+    border-color: #e74c3c; /* red for wrong answer */
+    color: #a01010;
+}
+
+#quiz-score {
+    background: var(--accent);
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    margin-top: 8px;
+}
+
